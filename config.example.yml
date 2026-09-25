@@ -1,0 +1,37 @@
+# Copy to config.yml (gitignored) and fill in the IDs for your server.
+# Enable Developer Mode in Discord to copy IDs.
+
+guildId: '000000000000000000'
+
+# Members need at least one of these roles to file issues.
+allowedRoleIds:
+  - '000000000000000000'
+
+# Options shown in the repository dropdown (max 25).
+repositories:
+  - { key: protocol, name: Avalon Protocol, repo: avalon-initiative/avalon-protocol }
+  - { key: sdks, name: Avalon SDKs, repo: avalon-initiative/avalon-sdks }
+  - { key: hub, name: Avalon Hub, repo: avalon-initiative/avalon-hub }
+  - { key: common-ui, name: Avalon Common UI, repo: avalon-initiative/avalon-common-ui }
+  - {
+      key: topology-visualizer,
+      name: Avalon Topology Visualizer,
+      repo: avalon-initiative/avalon-topology-visualizer,
+    }
+  - { key: bot, name: Avalon Bot, repo: avalon-initiative/avalon-bot }
+
+# Optional: preselect a repository per channel (channel ID -> repository key).
+channelDefaults: {}
+#  "000000000000000000": sdks
+
+# Optional overrides; these are the defaults.
+labels:
+  bug: 'type: bug'
+  feature: 'type: feature'
+  task: 'type: chore'
+  decision: decision
+
+# Per-user limit on opening the filing form.
+rateLimit:
+  maxRequests: 5
+  windowSeconds: 600

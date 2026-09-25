@@ -1,0 +1,21 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Secrets and instance-specific config: never committed.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+config.yml
+
+# Local run state
+_running/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
