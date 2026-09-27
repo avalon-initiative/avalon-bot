@@ -1,5 +1,5 @@
 import { IssueNotFoundError, RepositoryNotAccessibleError } from '../domain/errors.js';
-import type { CreatedIssue, NewIssue } from '../domain/issue.js';
+import type { ClosedIssue, CreatedIssue, NewIssue } from '../domain/issue.js';
 import type { IssueTracker } from '../domain/ports.js';
 import type { GitHubAppClient, GitHubRequester } from './app-client.js';
 import { httpStatusOf } from './http-status.js';
@@ -8,6 +8,17 @@ interface IssueResponse {
   readonly number: number;
   readonly html_url: string;
   readonly title: string;
+}
+
+const PAGE_SIZE = 100;
+const MAX_PAGES = 5;
+
+interface ListedIssue extends IssueResponse {
+  readonly body?: string | null;
+  readonly closed_at?: string | null;
+  readonly state_reason?: string | null;
+  readonly pull_request?: unknown;
+  readonly user?: { readonly type?: string } | null;
 }
 
 export class OctokitIssueTracker implements IssueTracker {
@@ -60,6 +71,43 @@ export class OctokitIssueTracker implements IssueTracker {
       issue_number: number,
       body,
     });
+  }
+
+  async listClosedSince(repo: string, since: Date): Promise<readonly ClosedIssue[]> {
+    const [owner = '', name = ''] = repo.split('/');
+    const client = await this.clientFor(owner, name, repo);
+    const closed: ClosedIssue[] = [];
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const { data } = await client.request('GET /repos/{owner}/{repo}/issues', {
+        owner,
+        repo: name,
+        state: 'closed',
+        since: since.toISOString(),
+        sort: 'updated',
+        direction: 'desc',
+        per_page: PAGE_SIZE,
+        page,
+      });
+      const items = data as readonly ListedIssue[];
+      for (const item of items) {
+        if (item.pull_request !== undefined || item.closed_at === null || item.closed_at === undefined)
+          continue;
+        const closedAt = new Date(item.closed_at);
+        if (closedAt < since) continue;
+        closed.push({
+          repo,
+          number: item.number,
+          title: item.title,
+          url: item.html_url,
+          body: item.body ?? '',
+          closedAt,
+          stateReason: item.state_reason ?? null,
+          authoredByBot: item.user?.type === 'Bot',
+        });
+      }
+      if (items.length < PAGE_SIZE) break;
+    }
+    return closed;
   }
 
   private async clientFor(owner: string, repo: string, fullName: string): Promise<GitHubRequester> {

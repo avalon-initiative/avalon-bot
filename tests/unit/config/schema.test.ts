@@ -17,6 +17,23 @@ describe('parseConfig', () => {
     expect(config.channelDefaults).toEqual({});
   });
 
+  it('leaves notifications off unless configured, then defaults to a 15 minute interval', () => {
+    expect(parseConfig(VALID).notifications).toBeUndefined();
+    expect(parseConfig(`${VALID}notifications: {}\n`).notifications).toEqual({
+      pollIntervalMinutes: 15,
+      mutedChannelIds: [],
+    });
+  });
+
+  it('accepts a custom interval and rejects one shorter than a minute', () => {
+    expect(
+      parseConfig(`${VALID}notifications: { pollIntervalMinutes: 60 }\n`).notifications?.pollIntervalMinutes,
+    ).toBe(60);
+    expect(() => parseConfig(`${VALID}notifications: { pollIntervalMinutes: 0 }\n`)).toThrow(
+      /pollIntervalMinutes/,
+    );
+  });
+
   it('rejects non-numeric IDs', () => {
     expect(() => parseConfig(VALID.replace('111111111111111111', 'my-guild'))).toThrow(/guildId/);
   });

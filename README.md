@@ -14,6 +14,10 @@ If the issue already exists, choose **Apps → Link GitHub Issue** instead and e
 
 Quoted Discord text is neutralized before it reaches GitHub: `@mentions` and `#123` references are broken and HTML is escaped, so filing an issue cannot ping users or cross-link other issues.
 
+## Notifications
+
+Optional and off by default. With a `notifications` block in `config.yml`, the bot checks each configured repository on a fixed interval (`pollIntervalMinutes`, default 15, minimum 1) and, when an issue it filed has been closed, replies to the original Discord message with a short note. Nothing is stored: the issue body already links to the source message, and the poll cursor and already-notified set live in memory, so closures that happen while the bot is down are not reported. The bot makes outbound requests to GitHub only; no inbound endpoint is needed. Channels or threads listed in `mutedChannelIds` never receive notes.
+
 ## Layout
 
 ```text

@@ -34,6 +34,13 @@ labels:
 # Comment on an existing issue with the Discord source link when it is linked from Discord.
 commentOnLinkedIssue: true
 
+# Optional: post a note in the original channel or thread when an issue the bot filed is closed.
+# The bot polls GitHub (outbound requests only) on this interval; omit the block to disable.
+# Closures that happen while the bot is down are not reported.
+#notifications:
+#  pollIntervalMinutes: 15
+#  mutedChannelIds: []    # channel or thread IDs that never receive notes
+
 # Per-user limit on opening the filing form.
 rateLimit:
   maxRequests: 5

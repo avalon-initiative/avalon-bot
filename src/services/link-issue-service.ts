@@ -20,7 +20,7 @@ export interface LinkedIssue {
 export class LinkIssueService {
   constructor(
     private readonly config: Pick<AppConfig, 'repositories' | 'commentOnLinkedIssue'>,
-    private readonly tracker: IssueTracker,
+    private readonly tracker: Pick<IssueTracker, 'getIssue' | 'addComment'>,
   ) {}
 
   async link(request: LinkIssueRequest): Promise<LinkedIssue> {

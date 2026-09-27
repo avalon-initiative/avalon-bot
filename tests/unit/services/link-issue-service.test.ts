@@ -17,7 +17,6 @@ function setup(options: { comment?: boolean; getIssue?: IssueTracker['getIssue']
   const getIssue = vi.fn(options.getIssue ?? (() => Promise.resolve(ISSUE)));
   const addComment = vi.fn().mockResolvedValue(undefined);
   const service = new LinkIssueService(makeConfig({ commentOnLinkedIssue: options.comment ?? true }), {
-    createIssue: vi.fn(),
     getIssue,
     addComment,
   });
