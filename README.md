@@ -34,26 +34,7 @@ Layering is enforced by lint: `domain`, `config`, `render`, `services` and `util
 
 ## Setup
 
-Requires Node 22 or newer.
-
-1. **Discord application.** Create an application in the Discord Developer Portal, add a bot, and invite it to the server with the `bot` and `applications.commands` scopes and these permissions: View Channels, Send Messages, Send Messages in Threads, Read Message History, Add Reactions. Administrator is not needed, and the privileged Message Content intent is not used.
-2. **GitHub App.** Create a GitHub App owned by the organization with **Issues: Read and write** (metadata read is implicit) and no webhook. Install it on the repositories the bot may file into, generate a private key, and save the `.pem` file.
-3. **Configuration.**
-
-   ```bash
-   cp .env.example .env
-   cp config.example.yml config.yml
-   ```
-
-   Fill in `.env` (tokens and the App ID, key path) and `config.yml` (guild ID, allowed role IDs, repositories, optional per-channel defaults). Both files are gitignored, as are `*.pem` keys.
-
-4. **Register the command and run.**
-
-   ```bash
-   npm ci
-   make register-commands   # once, and whenever the command definition changes
-   make start               # background; or `make run` in the foreground
-   ```
+See [`docs/setup.md`](docs/setup.md) for the full walkthrough: the Discord application, the GitHub App and its permissions, the `.env` and `config.yml` fields, registering the command, and troubleshooting.
 
 ## Development
 
