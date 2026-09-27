@@ -18,6 +18,8 @@ Quoted Discord text is neutralized before it reaches GitHub: `@mentions` and `#1
 
 Optional and off by default. With a `notifications` block in `config.yml`, the bot checks each configured repository on a fixed interval (`pollIntervalMinutes`, default 15, minimum 1) and, when an issue it filed has been closed, replies to the original Discord message with a short note. Nothing is stored: the issue body already links to the source message, and the poll cursor and already-notified set live in memory, so closures that happen while the bot is down are not reported. The bot makes outbound requests to GitHub only; no inbound endpoint is needed. Channels or threads listed in `mutedChannelIds` never receive notes.
 
+Set `pullRequests: true` to also post a note when a pull request opened after startup references a bot-filed issue through `Closes #N`, `Fixes #N`, `Resolves owner/repo#N` or an issue URL. Each issue gets one note, and issues the bot did not file are ignored. This lists pull requests, so the GitHub App also needs the **Pull requests: Read** permission.
+
 ## Layout
 
 ```text

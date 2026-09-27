@@ -1,5 +1,11 @@
 import { IssueNotFoundError, RepositoryNotAccessibleError } from '../domain/errors.js';
-import type { ClosedIssue, CreatedIssue, NewIssue } from '../domain/issue.js';
+import type {
+  ClosedIssue,
+  CreatedIssue,
+  IssueDetails,
+  NewIssue,
+  OpenedPullRequest,
+} from '../domain/issue.js';
 import type { IssueTracker } from '../domain/ports.js';
 import type { GitHubAppClient, GitHubRequester } from './app-client.js';
 import { httpStatusOf } from './http-status.js';
@@ -19,6 +25,11 @@ interface ListedIssue extends IssueResponse {
   readonly state_reason?: string | null;
   readonly pull_request?: unknown;
   readonly user?: { readonly type?: string } | null;
+}
+
+interface ListedPull extends IssueResponse {
+  readonly body?: string | null;
+  readonly created_at: string;
 }
 
 export class OctokitIssueTracker implements IssueTracker {
@@ -71,6 +82,63 @@ export class OctokitIssueTracker implements IssueTracker {
       issue_number: number,
       body,
     });
+  }
+
+  async getIssueDetails(repo: string, number: number): Promise<IssueDetails> {
+    const [owner = '', name = ''] = repo.split('/');
+    const client = await this.clientFor(owner, name, repo);
+    try {
+      const { data } = await client.request('GET /repos/{owner}/{repo}/issues/{issue_number}', {
+        owner,
+        repo: name,
+        issue_number: number,
+      });
+      const issue = data as ListedIssue;
+      return {
+        repo,
+        number: issue.number,
+        title: issue.title,
+        url: issue.html_url,
+        body: issue.body ?? '',
+        authoredByBot: issue.user?.type === 'Bot',
+      };
+    } catch (error) {
+      if (httpStatusOf(error) === 404 || httpStatusOf(error) === 410)
+        throw new IssueNotFoundError(repo, number);
+      throw error;
+    }
+  }
+
+  async listOpenedPullsSince(repo: string, since: Date): Promise<readonly OpenedPullRequest[]> {
+    const [owner = '', name = ''] = repo.split('/');
+    const client = await this.clientFor(owner, name, repo);
+    const opened: OpenedPullRequest[] = [];
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const { data } = await client.request('GET /repos/{owner}/{repo}/pulls', {
+        owner,
+        repo: name,
+        state: 'all',
+        sort: 'created',
+        direction: 'desc',
+        per_page: PAGE_SIZE,
+        page,
+      });
+      const items = data as readonly ListedPull[];
+      for (const item of items) {
+        const createdAt = new Date(item.created_at);
+        if (createdAt < since) return opened;
+        opened.push({
+          repo,
+          number: item.number,
+          title: item.title,
+          url: item.html_url,
+          body: item.body ?? '',
+          createdAt,
+        });
+      }
+      if (items.length < PAGE_SIZE) break;
+    }
+    return opened;
   }
 
   async listClosedSince(repo: string, since: Date): Promise<readonly ClosedIssue[]> {

@@ -28,8 +28,9 @@ function closedIssue(overrides: Partial<ClosedIssue> = {}): ClosedIssue {
 
 function setup(
   issues: readonly ClosedIssue[],
-  notifications: { pollIntervalMinutes: number; mutedChannelIds: string[] } = {
+  notifications: { pollIntervalMinutes: number; pullRequests: boolean; mutedChannelIds: string[] } = {
     pollIntervalMinutes: 15,
+    pullRequests: false,
     mutedChannelIds: [],
   },
 ) {
@@ -59,7 +60,7 @@ describe('CloseNotifier', () => {
     const { notifier, postNote } = setup([closedIssue()]);
     await notifier.poll();
     expect(postNote).toHaveBeenCalledWith(
-      { guildId: GUILD_ID, channelId: '444444444444444444', messageId: '333333333333333333' },
+      { channelId: '444444444444444444', messageId: '333333333333333333' },
       '🔒 Ticket **SDK reconnect loses guild state** ([#147](<https://github.com/avalon-initiative/avalon-sdks/issues/147>)) was closed.',
     );
   });
@@ -113,6 +114,7 @@ describe('CloseNotifier', () => {
   it('skips muted channels', async () => {
     const { notifier, postNote } = setup([closedIssue()], {
       pollIntervalMinutes: 15,
+      pullRequests: false,
       mutedChannelIds: ['444444444444444444'],
     });
     await notifier.poll();

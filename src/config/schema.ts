@@ -28,6 +28,8 @@ export const configSchema = z
     notifications: z
       .object({
         pollIntervalMinutes: z.number().int().min(1).default(15),
+        /** Needs the GitHub App's Pull requests: Read permission. */
+        pullRequests: z.boolean().default(false),
         mutedChannelIds: z.array(snowflake).default([]),
       })
       .optional(),

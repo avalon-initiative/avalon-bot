@@ -138,4 +138,67 @@ describe('OctokitIssueTracker', () => {
       expect(request).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe('pull requests and issue details', () => {
+    const since = new Date('2026-09-26T00:00:00.000Z');
+    const pullItem = (n: number, createdAt: string, body: string | null = 'Closes #1') => ({
+      number: n,
+      title: `PR ${String(n)}`,
+      html_url: `https://github.com/x/y/pull/${String(n)}`,
+      body,
+      created_at: createdAt,
+    });
+
+    it('lists pull requests created since the cursor and stops at the first older one', async () => {
+      const { tracker, request } = setup(
+        vi.fn().mockResolvedValue({
+          data: [
+            pullItem(3, '2026-09-26T11:00:00Z'),
+            pullItem(2, '2026-09-26T09:00:00Z', null),
+            pullItem(1, '2026-09-25T09:00:00Z'),
+          ],
+        }),
+      );
+      const pulls = await tracker.listOpenedPullsSince(ISSUE.repo, since);
+      expect(pulls.map((p) => p.number)).toEqual([3, 2]);
+      expect(pulls[1]?.body).toBe('');
+      expect(request).toHaveBeenCalledTimes(1);
+      expect(request).toHaveBeenCalledWith(
+        'GET /repos/{owner}/{repo}/pulls',
+        expect.objectContaining({ state: 'all', sort: 'created', direction: 'desc', page: 1 }),
+      );
+    });
+
+    it('pages through a full page of recent pull requests', async () => {
+      const full = Array.from({ length: 100 }, (_, n) => pullItem(200 - n, '2026-09-26T11:00:00Z'));
+      const request = vi
+        .fn()
+        .mockResolvedValueOnce({ data: full })
+        .mockResolvedValueOnce({ data: [pullItem(50, '2026-09-25T11:00:00Z')] });
+      const { tracker } = setup(request);
+      expect(await tracker.listOpenedPullsSince(ISSUE.repo, since)).toHaveLength(100);
+      expect(request).toHaveBeenCalledTimes(2);
+    });
+
+    it('fetches issue details including the body and author type', async () => {
+      const { tracker } = setup(
+        vi.fn().mockResolvedValue({
+          data: { number: 12, title: 'T', html_url: 'u', body: 'B', user: { type: 'Bot' } },
+        }),
+      );
+      expect(await tracker.getIssueDetails(ISSUE.repo, 12)).toEqual({
+        repo: ISSUE.repo,
+        number: 12,
+        title: 'T',
+        url: 'u',
+        body: 'B',
+        authoredByBot: true,
+      });
+    });
+
+    it('maps a missing issue to IssueNotFoundError', async () => {
+      const { tracker } = setup(vi.fn().mockRejectedValue(statusError(404)));
+      await expect(tracker.getIssueDetails(ISSUE.repo, 12)).rejects.toBeInstanceOf(IssueNotFoundError);
+    });
+  });
 });

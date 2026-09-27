@@ -39,6 +39,7 @@ commentOnLinkedIssue: true
 # Closures that happen while the bot is down are not reported.
 #notifications:
 #  pollIntervalMinutes: 15
+#  pullRequests: false    # also note when a pull request references a filed issue (needs Pull requests: Read)
 #  mutedChannelIds: []    # channel or thread IDs that never receive notes
 
 # Per-user limit on opening the filing form.

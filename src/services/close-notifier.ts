@@ -1,8 +1,8 @@
 import type { AppConfig } from '../config/schema.js';
 import type { ClosedIssue } from '../domain/issue.js';
 import type { DiscordNotifier, IssueTracker } from '../domain/ports.js';
-import { parseDiscordOrigin } from '../render/issue-body.js';
 import type { Logger } from '../util/logger.js';
+import { resolveNoteTarget } from './note-target.js';
 
 const MAX_REMEMBERED = 2000;
 
@@ -45,15 +45,13 @@ export class CloseNotifier {
 
   /** False only when a note should have been posted but was not. */
   private async notify(issue: ClosedIssue): Promise<boolean> {
-    if (!issue.authoredByBot) return true;
-    const origin = parseDiscordOrigin(issue.body);
-    if (origin?.guildId !== this.config.guildId) return true;
-    if (this.config.notifications?.mutedChannelIds.includes(origin.channelId)) return true;
+    const target = resolveNoteTarget(this.config, issue);
+    if (!target) return true;
 
     const key = `${issue.repo}#${String(issue.number)}@${issue.closedAt.toISOString()}`;
     if (this.notified.has(key)) return true;
     try {
-      await this.discord.postNote(origin, issueClosedNote(issue));
+      await this.discord.postNote(target, issueClosedNote(issue));
     } catch (error) {
       this.logger.warn('close note failed', { repo: issue.repo, number: issue.number, error: String(error) });
       return false;
