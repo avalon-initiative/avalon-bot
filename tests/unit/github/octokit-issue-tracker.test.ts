@@ -183,7 +183,15 @@ describe('OctokitIssueTracker', () => {
     it('fetches issue details including the body and author type', async () => {
       const { tracker } = setup(
         vi.fn().mockResolvedValue({
-          data: { number: 12, title: 'T', html_url: 'u', body: 'B', user: { type: 'Bot' } },
+          data: {
+            number: 12,
+            title: 'T',
+            html_url: 'u',
+            body: 'B',
+            user: { type: 'Bot' },
+            state: 'open',
+            labels: ['decision', { name: 'type: feature' }],
+          },
         }),
       );
       expect(await tracker.getIssueDetails(ISSUE.repo, 12)).toEqual({
@@ -193,6 +201,8 @@ describe('OctokitIssueTracker', () => {
         url: 'u',
         body: 'B',
         authoredByBot: true,
+        labels: ['decision', 'type: feature'],
+        open: true,
       });
     });
 
@@ -200,5 +210,33 @@ describe('OctokitIssueTracker', () => {
       const { tracker } = setup(vi.fn().mockRejectedValue(statusError(404)));
       await expect(tracker.getIssueDetails(ISSUE.repo, 12)).rejects.toBeInstanceOf(IssueNotFoundError);
     });
+  });
+
+  it('promotes to an ADR by adding the label, then rewriting and closing the issue', async () => {
+    const { tracker, request } = setup();
+    await tracker.promoteToAdr(ISSUE.repo, 12, {
+      title: 'ADR: T',
+      body: 'B',
+      label: 'architecture-decision-record',
+    });
+    const base = { owner: 'avalon-initiative', repo: 'avalon-sdks', issue_number: 12 };
+    expect(request.mock.calls).toEqual([
+      [
+        'POST /repos/{owner}/{repo}/issues/{issue_number}/labels',
+        { ...base, labels: ['architecture-decision-record'] },
+      ],
+      [
+        'PATCH /repos/{owner}/{repo}/issues/{issue_number}',
+        { ...base, title: 'ADR: T', body: 'B', state: 'closed', state_reason: 'completed' },
+      ],
+    ]);
+  });
+
+  it('does not close the issue when labeling fails', async () => {
+    const { tracker, request } = setup(vi.fn().mockRejectedValue(statusError(403)));
+    await expect(
+      tracker.promoteToAdr(ISSUE.repo, 12, { title: 'ADR: T', body: 'B', label: 'l' }),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(request).toHaveBeenCalledTimes(1);
   });
 });

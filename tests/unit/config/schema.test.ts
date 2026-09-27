@@ -35,6 +35,16 @@ describe('parseConfig', () => {
     );
   });
 
+  it('has no maintainers by default and validates their role IDs', () => {
+    const config = parseConfig(VALID);
+    expect(config.maintainerRoleIds).toEqual([]);
+    expect(config.labels.adr).toBe('architecture-decision-record');
+    expect(parseConfig(`${VALID}maintainerRoleIds: ["333333333333333333"]\n`).maintainerRoleIds).toEqual([
+      '333333333333333333',
+    ]);
+    expect(() => parseConfig(`${VALID}maintainerRoleIds: [maintainers]\n`)).toThrow(/maintainerRoleIds/);
+  });
+
   it('rejects non-numeric IDs', () => {
     expect(() => parseConfig(VALID.replace('111111111111111111', 'my-guild'))).toThrow(/guildId/);
   });

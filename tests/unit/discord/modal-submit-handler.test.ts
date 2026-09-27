@@ -19,13 +19,14 @@ const CREATED: CreatedIssue = {
   labelsApplied: true,
 };
 
-function setup(createIssue = vi.fn().mockResolvedValue(CREATED)) {
+function setup(createIssue = vi.fn().mockResolvedValue(CREATED), offerPromotion = false) {
   const pending = new TtlStore<PendingFiling>(60_000);
   pending.set('p1', { userId: 'u1', source: makeSource() });
   const handler = new ModalSubmitHandler(
     new FileIssueService(makeConfig(), { createIssue }),
     pending,
     silentLogger,
+    offerPromotion,
   );
   const calls = {
     deferEphemeral: vi.fn().mockResolvedValue(undefined),
@@ -56,6 +57,7 @@ describe('ModalSubmitHandler', () => {
     expect(calls.replyToMessage).toHaveBeenCalledWith(
       '333333333333333333',
       '✅ Ticket **SDK reconnect loses guild state** ([#147](<https://github.com/avalon-initiative/avalon-sdks/issues/147>)) filed',
+      undefined,
     );
     expect(calls.editReply).toHaveBeenCalledWith(RESPONSES.done);
   });
@@ -112,5 +114,33 @@ describe('ModalSubmitHandler', () => {
     await handler.handle(request());
     expect(calls.replyToMessage).toHaveBeenCalled();
     expect(calls.editReply).toHaveBeenCalledWith(RESPONSES.done);
+  });
+
+  describe('promotion button', () => {
+    const decisionFields = {
+      getStringSelectValues: (id: string) => (id === 'kind' ? ['decision'] : ['sdks']),
+      getTextInputValue: (id: string) => (id === 'title' ? 'Adopt X' : ''),
+    };
+
+    it('is attached to a decision when promotion is configured', async () => {
+      const { handler, calls, request } = setup(undefined, true);
+      await handler.handle(request({ fields: decisionFields }));
+      expect(calls.replyToMessage).toHaveBeenCalledWith('333333333333333333', expect.any(String), {
+        customId: 'promote-adr:sdks:147',
+        label: 'Promote to ADR',
+      });
+    });
+
+    it('is left off when promotion is not configured', async () => {
+      const { handler, calls, request } = setup(undefined, false);
+      await handler.handle(request({ fields: decisionFields }));
+      expect(calls.replyToMessage.mock.calls[0]?.[2]).toBeUndefined();
+    });
+
+    it('is left off for other issue types', async () => {
+      const { handler, calls, request } = setup(undefined, true);
+      await handler.handle(request());
+      expect(calls.replyToMessage.mock.calls[0]?.[2]).toBeUndefined();
+    });
   });
 });

@@ -10,6 +10,11 @@ export const RESPONSES = {
   repoNotAccessible: 'The bot is not installed on that repository. Ask a maintainer to add it.',
   unexpected: 'Something went wrong while filing the issue. Nothing was created.',
   unexpectedLink: 'Something went wrong while linking the issue. Nothing was changed.',
+  promoteNotAuthorized: 'Only maintainers can promote a decision to an ADR.',
+  promoted: 'Promoted to an ADR and closed.',
+  alreadyPromoted: 'That decision is already an ADR.',
+  notADecision: 'That is not an open decision filed by the bot, so it cannot be promoted.',
+  unexpectedPromote: 'Something went wrong while promoting the decision. Nothing was changed.',
   done: 'Filed.',
   linked: 'Linked.',
   invalidReference:

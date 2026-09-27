@@ -1,5 +1,6 @@
 import { IssueNotFoundError, RepositoryNotAccessibleError } from '../domain/errors.js';
 import type {
+  AdrPromotion,
   ClosedIssue,
   CreatedIssue,
   IssueDetails,
@@ -25,6 +26,8 @@ interface ListedIssue extends IssueResponse {
   readonly state_reason?: string | null;
   readonly pull_request?: unknown;
   readonly user?: { readonly type?: string } | null;
+  readonly labels?: readonly (string | { readonly name?: string })[];
+  readonly state?: string;
 }
 
 interface ListedPull extends IssueResponse {
@@ -101,12 +104,31 @@ export class OctokitIssueTracker implements IssueTracker {
         url: issue.html_url,
         body: issue.body ?? '',
         authoredByBot: issue.user?.type === 'Bot',
+        labels: (issue.labels ?? []).map((l) => (typeof l === 'string' ? l : (l.name ?? ''))),
+        open: issue.state === 'open',
       };
     } catch (error) {
       if (httpStatusOf(error) === 404 || httpStatusOf(error) === 410)
         throw new IssueNotFoundError(repo, number);
       throw error;
     }
+  }
+
+  async promoteToAdr(repo: string, number: number, promotion: AdrPromotion): Promise<void> {
+    const [owner = '', name = ''] = repo.split('/');
+    const client = await this.clientFor(owner, name, repo);
+    const issue = { owner, repo: name, issue_number: number };
+    await client.request('POST /repos/{owner}/{repo}/issues/{issue_number}/labels', {
+      ...issue,
+      labels: [promotion.label],
+    });
+    await client.request('PATCH /repos/{owner}/{repo}/issues/{issue_number}', {
+      ...issue,
+      title: promotion.title,
+      body: promotion.body,
+      state: 'closed',
+      state_reason: 'completed',
+    });
   }
 
   async listOpenedPullsSince(repo: string, since: Date): Promise<readonly OpenedPullRequest[]> {

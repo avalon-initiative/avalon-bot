@@ -30,6 +30,12 @@ labels:
   feature: 'type: feature'
   task: 'type: chore'
   decision: decision
+  adr: architecture-decision-record
+
+# Optional: roles that see and may use "Promote to ADR" on the confirmation for a decision issue.
+# Leave empty to disable promotion.
+maintainerRoleIds: []
+#  - '000000000000000000'
 
 # Comment on an existing issue with the Discord source link when it is linked from Discord.
 commentOnLinkedIssue: true

@@ -20,6 +20,10 @@ Optional and off by default. With a `notifications` block in `config.yml`, the b
 
 Set `pullRequests: true` to also post a note when a pull request opened after startup references a bot-filed issue through `Closes #N`, `Fixes #N`, `Resolves owner/repo#N` or an issue URL. Each issue gets one note, and issues the bot did not file are ignored. This lists pull requests, so the GitHub App also needs the **Pull requests: Read** permission.
 
+## Promoting a decision to an ADR
+
+Set `maintainerRoleIds` in `config.yml` to enable it. When someone files a **Decision**, the bot's confirmation carries a **Promote to ADR** button. A member with a maintainer role can press it to rewrite the issue into the organization's ADR shape (Status, Context, Decision, Consequences, Related), add the `architecture-decision-record` label, and close it as completed. The button then disappears. Only open, bot-filed decisions can be promoted, and nothing is stored: the repository and issue number travel in the button itself. The Consequences section is left for a maintainer to fill in on GitHub. The existing Issues read/write permission is enough.
+
 ## Layout
 
 ```text
