@@ -1,0 +1,33 @@
+[Unit]
+Description=Avalon Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=avalon-bot
+Group=avalon-bot
+WorkingDirectory=/opt/avalon-bot
+EnvironmentFile=/opt/avalon-bot/.env
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=5
+# SIGTERM is handled by the entry point and closes the gateway connection.
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
