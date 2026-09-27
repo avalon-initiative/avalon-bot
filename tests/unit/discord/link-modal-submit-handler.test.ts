@@ -23,7 +23,6 @@ function setup(getIssue = vi.fn().mockResolvedValue(ISSUE)) {
   const pending = new TtlStore<PendingFiling>(60_000);
   pending.set('p1', { userId: 'u1', source: makeSource() });
   const service = new LinkIssueService(makeConfig(), {
-    createIssue: vi.fn(),
     getIssue,
     addComment: vi.fn().mockResolvedValue(undefined),
   });

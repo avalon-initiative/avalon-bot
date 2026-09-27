@@ -53,3 +53,19 @@ export function renderLinkComment(source: SourceMessage, linkedBy: string): stri
     ].join('\n\n') + '\n'
   );
 }
+
+export interface DiscordOrigin {
+  readonly guildId: string;
+  readonly channelId: string;
+  readonly messageId: string;
+}
+
+const SOURCE_MESSAGE_LINK = /^- Source message: https:\/\/discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)\s*$/m;
+
+/** Reads back the Source section written by renderSource. */
+export function parseDiscordOrigin(body: string): DiscordOrigin | undefined {
+  const match = SOURCE_MESSAGE_LINK.exec(body);
+  const [, guildId, channelId, messageId] = match ?? [];
+  if (guildId === undefined || channelId === undefined || messageId === undefined) return undefined;
+  return { guildId, channelId, messageId };
+}

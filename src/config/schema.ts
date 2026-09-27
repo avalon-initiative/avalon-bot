@@ -25,6 +25,12 @@ export const configSchema = z
     channelDefaults: z.record(snowflake, z.string()).default({}),
     labels: labelsSchema,
     commentOnLinkedIssue: z.boolean().default(true),
+    notifications: z
+      .object({
+        pollIntervalMinutes: z.number().int().min(1).default(15),
+        mutedChannelIds: z.array(snowflake).default([]),
+      })
+      .optional(),
     rateLimit: z
       .object({
         maxRequests: z.number().int().positive().default(5),

@@ -91,4 +91,51 @@ describe('OctokitIssueTracker', () => {
       body: 'hello',
     });
   });
+
+  describe('listClosedSince', () => {
+    const since = new Date('2026-09-26T00:00:00.000Z');
+    const item = (overrides: Record<string, unknown> = {}) => ({
+      number: 1,
+      title: 'T',
+      html_url: 'https://github.com/x/y/issues/1',
+      body: 'B',
+      closed_at: '2026-09-26T10:00:00Z',
+      state_reason: 'completed',
+      user: { type: 'Bot' },
+      ...overrides,
+    });
+
+    it('returns closed issues, skipping pull requests and closures before the cursor', async () => {
+      const { tracker, request } = setup(
+        vi.fn().mockResolvedValue({
+          data: [
+            item(),
+            item({ number: 2, pull_request: {} }),
+            item({ number: 3, closed_at: '2026-09-25T10:00:00Z' }),
+            item({ number: 4, user: { type: 'User' }, state_reason: 'not_planned', body: null }),
+          ],
+        }),
+      );
+      const issues = await tracker.listClosedSince(ISSUE.repo, since);
+      expect(issues.map((i) => i.number)).toEqual([1, 4]);
+      expect(issues[0]).toMatchObject({ authoredByBot: true, stateReason: 'completed', body: 'B' });
+      expect(issues[1]).toMatchObject({ authoredByBot: false, stateReason: 'not_planned', body: '' });
+      expect(request).toHaveBeenCalledWith(
+        'GET /repos/{owner}/{repo}/issues',
+        expect.objectContaining({ state: 'closed', since: since.toISOString(), page: 1 }),
+      );
+    });
+
+    it('pages until a short page', async () => {
+      const full = Array.from({ length: 100 }, (_, n) => item({ number: n + 1 }));
+      const request = vi
+        .fn()
+        .mockResolvedValueOnce({ data: full })
+        .mockResolvedValueOnce({ data: [item({ number: 101 })] });
+      const { tracker } = setup(request);
+      const issues = await tracker.listClosedSince(ISSUE.repo, since);
+      expect(issues).toHaveLength(101);
+      expect(request).toHaveBeenCalledTimes(2);
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  parseDiscordOrigin,
   renderLinkComment,
   MAX_QUOTED_LENGTH,
   MAX_TITLE_LENGTH,
@@ -86,5 +87,19 @@ describe('renderLinkComment', () => {
 
   it('neutralizes mentions in the linker name', () => {
     expect(renderLinkComment(makeSource(), '@everyone')).not.toContain('@everyone');
+  });
+});
+
+describe('parseDiscordOrigin', () => {
+  it('reads back the source message written by renderBody', () => {
+    const body = renderBody(
+      makeRequest({ source: makeSource({ messageUrl: 'https://discord.com/channels/10/20/30' }) }),
+    );
+    expect(parseDiscordOrigin(body)).toEqual({ guildId: '10', channelId: '20', messageId: '30' });
+  });
+
+  it('ignores bodies without a source message line', () => {
+    expect(parseDiscordOrigin('Discussed at https://discord.com/channels/10/20/30 today')).toBeUndefined();
+    expect(parseDiscordOrigin('')).toBeUndefined();
   });
 });
