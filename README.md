@@ -10,6 +10,8 @@ Right-click a message, choose **Apps → File GitHub Issue**, pick a type and re
 2. A modal collects type (bug, feature, task, decision), repository, title and details. The selected message is held in memory for the lifetime of the modal only.
 3. On submit the bot creates the issue through a GitHub App, adds a ✅ to the source message, and replies with `Ticket <title> (#N) filed`.
 
+If the issue already exists, choose **Apps → Link GitHub Issue** instead and enter an issue URL or `repo#number` (a configured repository key or `owner/name`). The bot verifies the issue, replies to the message with the link, adds the ✅, and comments on the issue with the Discord source unless `commentOnLinkedIssue` is `false`. Both commands share the role allowlist and the rate limit.
+
 Quoted Discord text is neutralized before it reaches GitHub: `@mentions` and `#123` references are broken and HTML is escaped, so filing an issue cannot ping users or cross-link other issues.
 
 ## Layout

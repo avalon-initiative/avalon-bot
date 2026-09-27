@@ -3,7 +3,6 @@ import type { AppConfig } from '../../config/schema.js';
 import type { Logger } from '../../util/logger.js';
 import type { RateLimiter } from '../../util/rate-limiter.js';
 import { toSourceMessage, type MessageLike } from '../mappers/source-message-mapper.js';
-import { buildFileIssueModal } from '../modal/file-issue-modal.js';
 import { isAuthorized } from '../permissions.js';
 import type { PendingStore } from '../pending.js';
 import { hasHandledMarker, type ReactionLike } from '../reactions.js';
@@ -21,12 +20,16 @@ export interface ContextMenuRequest {
   showModal(modal: ModalBuilder): Promise<void>;
 }
 
+/** Builds the modal this command opens once the request has passed the gates. */
+export type ModalFactory = (pendingId: string, request: ContextMenuRequest) => ModalBuilder;
+
 export class ContextMenuHandler {
   constructor(
     private readonly config: AppConfig,
     private readonly pending: PendingStore,
     private readonly rateLimiter: RateLimiter,
     private readonly logger: Logger,
+    private readonly buildModal: ModalFactory,
   ) {}
 
   async handle(request: ContextMenuRequest): Promise<void> {
@@ -51,19 +54,6 @@ export class ContextMenuHandler {
       userId: request.userId,
       source: toSourceMessage(request.message),
     });
-    await request.showModal(
-      buildFileIssueModal({
-        pendingId: request.interactionId,
-        repositories: this.config.repositories,
-        defaultRepoKey: this.defaultRepoFor(request),
-      }),
-    );
-  }
-
-  private defaultRepoFor(request: ContextMenuRequest): string | undefined {
-    const defaults = this.config.channelDefaults;
-    return (
-      defaults[request.channelId] ?? (request.parentChannelId ? defaults[request.parentChannelId] : undefined)
-    );
+    await request.showModal(this.buildModal(request.interactionId, request));
   }
 }

@@ -1,7 +1,7 @@
-import { RepositoryNotAccessibleError } from '../domain/errors.js';
+import { IssueNotFoundError, RepositoryNotAccessibleError } from '../domain/errors.js';
 import type { CreatedIssue, NewIssue } from '../domain/issue.js';
 import type { IssueTracker } from '../domain/ports.js';
-import type { GitHubAppClient } from './app-client.js';
+import type { GitHubAppClient, GitHubRequester } from './app-client.js';
 import { httpStatusOf } from './http-status.js';
 
 interface IssueResponse {
@@ -32,6 +32,38 @@ export class OctokitIssueTracker implements IssueTracker {
       const { data } = await client.request('POST /repos/{owner}/{repo}/issues', params);
       return toCreated(issue.repo, data as IssueResponse, false);
     }
+  }
+
+  async getIssue(repo: string, number: number): Promise<CreatedIssue> {
+    const [owner = '', name = ''] = repo.split('/');
+    const client = await this.clientFor(owner, name, repo);
+    try {
+      const { data } = await client.request('GET /repos/{owner}/{repo}/issues/{issue_number}', {
+        owner,
+        repo: name,
+        issue_number: number,
+      });
+      return toCreated(repo, data as IssueResponse, true);
+    } catch (error) {
+      if (httpStatusOf(error) === 404 || httpStatusOf(error) === 410)
+        throw new IssueNotFoundError(repo, number);
+      throw error;
+    }
+  }
+
+  async addComment(repo: string, number: number, body: string): Promise<void> {
+    const [owner = '', name = ''] = repo.split('/');
+    const client = await this.clientFor(owner, name, repo);
+    await client.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+      owner,
+      repo: name,
+      issue_number: number,
+      body,
+    });
+  }
+
+  private async clientFor(owner: string, repo: string, fullName: string): Promise<GitHubRequester> {
+    return this.github.clientFor(await this.installationFor(owner, repo, fullName));
   }
 
   private async installationFor(owner: string, repo: string, fullName: string): Promise<number> {

@@ -24,6 +24,7 @@ export const configSchema = z
     repositories: z.array(repositorySchema).min(1).max(25),
     channelDefaults: z.record(snowflake, z.string()).default({}),
     labels: labelsSchema,
+    commentOnLinkedIssue: z.boolean().default(true),
     rateLimit: z
       .object({
         maxRequests: z.number().int().positive().default(5),

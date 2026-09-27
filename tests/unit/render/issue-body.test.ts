@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  renderLinkComment,
   MAX_QUOTED_LENGTH,
   MAX_TITLE_LENGTH,
   renderBody,
@@ -70,5 +71,20 @@ describe('renderBody', () => {
 
   it('handles messages with no text', () => {
     expect(renderBody(makeRequest({ source: makeSource({ content: '' }) }))).toContain('_(no text content)_');
+  });
+});
+
+describe('renderLinkComment', () => {
+  it('carries the source section and who linked it, without quoting the message', () => {
+    const body = renderLinkComment(makeSource({ threadName: 'reconnect' }), 'Bob');
+    expect(body).toContain('### Source');
+    expect(body).toContain('- Channel: `#sdk › reconnect`');
+    expect(body).toContain('- Discussion: https://discord.com/channels/1/2');
+    expect(body).toContain('### Linked By\n\nBob (Discord)');
+    expect(body).not.toContain("doesn't restore");
+  });
+
+  it('neutralizes mentions in the linker name', () => {
+    expect(renderLinkComment(makeSource(), '@everyone')).not.toContain('@everyone');
   });
 });
