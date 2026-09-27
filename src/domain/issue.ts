@@ -37,3 +37,21 @@ export interface ClosedIssue {
   /** True when a GitHub App or other bot account opened the issue. */
   readonly authoredByBot: boolean;
 }
+
+export interface IssueDetails {
+  readonly repo: string;
+  readonly number: number;
+  readonly title: string;
+  readonly url: string;
+  readonly body: string;
+  readonly authoredByBot: boolean;
+}
+
+export interface OpenedPullRequest {
+  readonly repo: string;
+  readonly number: number;
+  readonly title: string;
+  readonly url: string;
+  readonly body: string;
+  readonly createdAt: Date;
+}

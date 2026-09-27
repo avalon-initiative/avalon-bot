@@ -21,6 +21,7 @@ describe('parseConfig', () => {
     expect(parseConfig(VALID).notifications).toBeUndefined();
     expect(parseConfig(`${VALID}notifications: {}\n`).notifications).toEqual({
       pollIntervalMinutes: 15,
+      pullRequests: false,
       mutedChannelIds: [],
     });
   });

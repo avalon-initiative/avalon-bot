@@ -2,6 +2,7 @@ import type { BotHandlers } from './discord/bot.js';
 import type { AppConfig } from './config/schema.js';
 import type { IssueTracker } from './domain/ports.js';
 import { createDiscordNotifier } from './discord/notifier.js';
+import { PullRequestNotifier } from './services/pull-request-notifier.js';
 import { CloseNotifier } from './services/close-notifier.js';
 import { startInterval } from './util/scheduler.js';
 import type { Client } from 'discord.js';
@@ -30,7 +31,7 @@ export function buildHandlers(config: AppConfig, tracker: IssueTracker, logger: 
   };
 }
 
-/** Starts the closed-issue poller when `notifications` is configured; returns a function that stops it. */
+/** Starts the notification poller when `notifications` is configured; returns a function that stops it. */
 export function startNotifications(
   config: AppConfig,
   tracker: IssueTracker,
@@ -38,8 +39,24 @@ export function startNotifications(
   logger: Logger,
 ): () => void {
   if (!config.notifications) return () => undefined;
-  const notifier = new CloseNotifier(config, tracker, createDiscordNotifier(client), logger, new Date());
+  const discord = createDiscordNotifier(client);
+  const startedAt = new Date();
+  const closed = new CloseNotifier(config, tracker, discord, logger, startedAt);
+  const pulls = config.notifications.pullRequests
+    ? new PullRequestNotifier(config, tracker, discord, logger, startedAt)
+    : undefined;
   const intervalMs = config.notifications.pollIntervalMinutes * 60_000;
-  logger.info('notifications enabled', { pollIntervalMinutes: config.notifications.pollIntervalMinutes });
-  return startInterval(() => notifier.poll(), intervalMs, logger, 'notification poll');
+  logger.info('notifications enabled', {
+    pollIntervalMinutes: config.notifications.pollIntervalMinutes,
+    pullRequests: pulls !== undefined,
+  });
+  return startInterval(
+    async () => {
+      await closed.poll();
+      await pulls?.poll();
+    },
+    intervalMs,
+    logger,
+    'notification poll',
+  );
 }
