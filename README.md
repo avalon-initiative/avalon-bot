@@ -36,6 +36,43 @@ Layering is enforced by lint: `domain`, `config`, `render`, `services` and `util
 
 See [`docs/setup.md`](docs/setup.md) for the full walkthrough: the Discord application, the GitHub App and its permissions, the `.env` and `config.yml` fields, registering the command, and troubleshooting.
 
+## Deployment
+
+`deploy/avalon-bot.service` runs the bot under systemd as a dedicated non-root user, restarts it on failure and starts it on boot. The unit assumes the install path `/opt/avalon-bot`; edit `WorkingDirectory`, `EnvironmentFile` and `ExecStart` if the path or Node location differs.
+
+Install:
+
+```bash
+sudo useradd --system --home /opt/avalon-bot --shell /usr/sbin/nologin avalon-bot
+sudo git clone https://github.com/avalon-initiative/avalon-bot /opt/avalon-bot
+cd /opt/avalon-bot
+# create .env, config.yml and the GitHub App .pem (see docs/setup.md), then:
+sudo chown -R avalon-bot:avalon-bot /opt/avalon-bot
+sudo chmod 600 .env *.pem
+sudo -u avalon-bot npm ci && sudo -u avalon-bot make build
+sudo -u avalon-bot make register-commands
+sudo cp deploy/avalon-bot.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now avalon-bot
+```
+
+Update:
+
+```bash
+cd /opt/avalon-bot
+sudo -u avalon-bot git pull
+sudo -u avalon-bot npm ci && sudo -u avalon-bot make build
+sudo systemctl restart avalon-bot
+```
+
+Logs are JSON lines in the journal:
+
+```bash
+journalctl -u avalon-bot -f
+systemctl status avalon-bot
+```
+
+The unit mounts the filesystem read-only for the service, so the bot writes nothing to disk; it needs only to read `.env`, `config.yml` and the key.
+
 ## Development
 
 ```bash
