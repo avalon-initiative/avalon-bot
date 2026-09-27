@@ -42,6 +42,7 @@ export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     ],
     channelDefaults: {},
     labels: { bug: 'type: bug', feature: 'type: feature', task: 'type: chore', decision: 'decision' },
+    commentOnLinkedIssue: true,
     rateLimit: { maxRequests: 5, windowSeconds: 600 },
     ...overrides,
   };

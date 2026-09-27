@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { RepositoryNotAccessibleError } from '../../../src/domain/errors.js';
+import { IssueNotFoundError, RepositoryNotAccessibleError } from '../../../src/domain/errors.js';
 import type { GitHubAppClient } from '../../../src/github/app-client.js';
 import { OctokitIssueTracker } from '../../../src/github/octokit-issue-tracker.js';
 
@@ -58,5 +58,37 @@ describe('OctokitIssueTracker', () => {
     await tracker.createIssue(ISSUE);
     await tracker.createIssue(ISSUE);
     expect(installationIdFor).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetches an issue', async () => {
+    const { tracker, request } = setup();
+    const issue = await tracker.getIssue(ISSUE.repo, 12);
+    expect(issue).toMatchObject({ repo: ISSUE.repo, number: 12, url: RESPONSE.data.html_url });
+    expect(request).toHaveBeenCalledWith('GET /repos/{owner}/{repo}/issues/{issue_number}', {
+      owner: 'avalon-initiative',
+      repo: 'avalon-sdks',
+      issue_number: 12,
+    });
+  });
+
+  it('maps a 404 on the issue to IssueNotFoundError', async () => {
+    const { tracker } = setup(vi.fn().mockRejectedValue(statusError(404)));
+    await expect(tracker.getIssue(ISSUE.repo, 12)).rejects.toBeInstanceOf(IssueNotFoundError);
+  });
+
+  it('does not map other issue lookup failures', async () => {
+    const { tracker } = setup(vi.fn().mockRejectedValue(statusError(500)));
+    await expect(tracker.getIssue(ISSUE.repo, 12)).rejects.toMatchObject({ status: 500 });
+  });
+
+  it('posts a comment', async () => {
+    const { tracker, request } = setup();
+    await tracker.addComment(ISSUE.repo, 12, 'hello');
+    expect(request).toHaveBeenCalledWith('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+      owner: 'avalon-initiative',
+      repo: 'avalon-sdks',
+      issue_number: 12,
+      body: 'hello',
+    });
   });
 });

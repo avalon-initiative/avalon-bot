@@ -3,6 +3,7 @@ import {
   ContextMenuHandler,
   type ContextMenuRequest,
 } from '../../../src/discord/handlers/context-menu-handler.js';
+import { fileIssueModalFactory, linkIssueModalFactory } from '../../../src/discord/modal/modal-factories.js';
 import { RESPONSES } from '../../../src/discord/responses.js';
 import type { PendingFiling } from '../../../src/discord/pending.js';
 import { RateLimiter } from '../../../src/util/rate-limiter.js';
@@ -41,7 +42,13 @@ function makeRequest(overrides: Partial<ContextMenuRequest> = {}) {
 
 function setup(config = makeConfig(), limit = 5) {
   const pending = new TtlStore<PendingFiling>(60_000);
-  const handler = new ContextMenuHandler(config, pending, new RateLimiter(limit, 60_000), silentLogger);
+  const handler = new ContextMenuHandler(
+    config,
+    pending,
+    new RateLimiter(limit, 60_000),
+    silentLogger,
+    fileIssueModalFactory(config),
+  );
   return { handler, pending };
 }
 
@@ -103,5 +110,24 @@ describe('ContextMenuHandler', () => {
     await handler.handle(request);
     const modal = JSON.stringify((showModal.mock.calls[0]?.[0] as { toJSON(): unknown }).toJSON());
     expect(modal).toMatch(/"value":"hub"[^}]*"default":true/);
+  });
+
+  it('opens whichever modal its factory builds, behind the same gates', async () => {
+    const pending = new TtlStore<PendingFiling>(60_000);
+    const handler = new ContextMenuHandler(
+      makeConfig(),
+      pending,
+      new RateLimiter(5, 60_000),
+      silentLogger,
+      linkIssueModalFactory(),
+    );
+    const denied = makeRequest({ memberRoleIds: [] });
+    await handler.handle(denied.request);
+    expect(denied.replyEphemeral).toHaveBeenCalledWith(RESPONSES.notAuthorized);
+
+    const allowed = makeRequest();
+    await handler.handle(allowed.request);
+    const modal = allowed.showModal.mock.calls[0]?.[0] as { toJSON(): { custom_id: string } };
+    expect(modal.toJSON().custom_id).toBe('link-issue:i1');
   });
 });

@@ -31,6 +31,9 @@ labels:
   task: 'type: chore'
   decision: decision
 
+# Comment on an existing issue with the Discord source link when it is linked from Discord.
+commentOnLinkedIssue: true
+
 # Per-user limit on opening the filing form.
 rateLimit:
   maxRequests: 5

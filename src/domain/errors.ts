@@ -18,3 +18,20 @@ export class RepositoryNotAccessibleError extends Error {
     this.name = 'RepositoryNotAccessibleError';
   }
 }
+
+export class InvalidIssueReferenceError extends Error {
+  constructor(readonly reference: string) {
+    super(`Not an issue reference: ${reference}`);
+    this.name = 'InvalidIssueReferenceError';
+  }
+}
+
+export class IssueNotFoundError extends Error {
+  constructor(
+    readonly repo: string,
+    readonly number: number,
+  ) {
+    super(`${repo}#${String(number)} was not found.`);
+    this.name = 'IssueNotFoundError';
+  }
+}

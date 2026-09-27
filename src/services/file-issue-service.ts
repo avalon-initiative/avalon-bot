@@ -7,7 +7,7 @@ import { renderBody, renderTitle } from '../render/issue-body.js';
 export class FileIssueService {
   constructor(
     private readonly config: Pick<AppConfig, 'repositories' | 'labels'>,
-    private readonly tracker: IssueTracker,
+    private readonly tracker: Pick<IssueTracker, 'createIssue'>,
   ) {}
 
   findRepository(key: string): RepositoryConfig {
