@@ -34,6 +34,8 @@ function issue(overrides: Partial<IssueDetails> = {}): IssueDetails {
       }),
     ),
     authoredByBot: true,
+    labels: ['decision'],
+    open: true,
     ...overrides,
   };
 }

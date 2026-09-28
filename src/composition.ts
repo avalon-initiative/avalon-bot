@@ -8,6 +8,8 @@ import { startInterval } from './util/scheduler.js';
 import type { Client } from 'discord.js';
 import { PENDING_TTL_MS } from './discord/constants.js';
 import { ContextMenuHandler } from './discord/handlers/context-menu-handler.js';
+import { PromoteAdrHandler } from './discord/handlers/promote-adr-handler.js';
+import { PromoteDecisionService } from './services/promote-decision-service.js';
 import { LinkModalSubmitHandler } from './discord/handlers/link-modal-submit-handler.js';
 import { fileIssueModalFactory, linkIssueModalFactory } from './discord/modal/modal-factories.js';
 import { ModalSubmitHandler } from './discord/handlers/modal-submit-handler.js';
@@ -25,9 +27,10 @@ export function buildHandlers(config: AppConfig, tracker: IssueTracker, logger: 
   const linkService = new LinkIssueService(config, tracker);
   return {
     contextMenu: new ContextMenuHandler(config, pending, limiter, logger, fileIssueModalFactory(config)),
-    modalSubmit: new ModalSubmitHandler(service, pending, logger),
+    modalSubmit: new ModalSubmitHandler(service, pending, logger, config.maintainerRoleIds.length > 0),
     linkContextMenu: new ContextMenuHandler(config, pending, limiter, logger, linkIssueModalFactory()),
     linkModalSubmit: new LinkModalSubmitHandler(linkService, pending, logger),
+    promoteAdr: new PromoteAdrHandler(config, new PromoteDecisionService(config, tracker), logger),
   };
 }
 

@@ -35,3 +35,23 @@ export class IssueNotFoundError extends Error {
     this.name = 'IssueNotFoundError';
   }
 }
+
+export class NotADecisionError extends Error {
+  constructor(
+    readonly repo: string,
+    readonly number: number,
+  ) {
+    super(`${repo}#${String(number)} is not an open decision filed by the bot.`);
+    this.name = 'NotADecisionError';
+  }
+}
+
+export class AlreadyPromotedError extends Error {
+  constructor(
+    readonly repo: string,
+    readonly number: number,
+  ) {
+    super(`${repo}#${String(number)} is already an ADR.`);
+    this.name = 'AlreadyPromotedError';
+  }
+}

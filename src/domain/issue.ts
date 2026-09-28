@@ -45,6 +45,14 @@ export interface IssueDetails {
   readonly url: string;
   readonly body: string;
   readonly authoredByBot: boolean;
+  readonly labels: readonly string[];
+  readonly open: boolean;
+}
+
+export interface AdrPromotion {
+  readonly title: string;
+  readonly body: string;
+  readonly label: string;
 }
 
 export interface OpenedPullRequest {

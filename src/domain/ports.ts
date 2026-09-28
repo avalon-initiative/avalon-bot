@@ -1,4 +1,11 @@
-import type { ClosedIssue, CreatedIssue, IssueDetails, NewIssue, OpenedPullRequest } from './issue.js';
+import type {
+  AdrPromotion,
+  ClosedIssue,
+  CreatedIssue,
+  IssueDetails,
+  NewIssue,
+  OpenedPullRequest,
+} from './issue.js';
 
 export interface IssueTracker {
   createIssue(issue: NewIssue): Promise<CreatedIssue>;
@@ -7,6 +14,8 @@ export interface IssueTracker {
   addComment(repo: string, number: number, body: string): Promise<void>;
   /** Throws IssueNotFoundError when the issue is missing or not visible to the app. */
   getIssueDetails(repo: string, number: number): Promise<IssueDetails>;
+  /** Adds the ADR label, replaces title and body, and closes the issue as completed. */
+  promoteToAdr(repo: string, number: number, promotion: AdrPromotion): Promise<void>;
   /** Pull requests created at or after `since`, drafts included. */
   listOpenedPullsSince(repo: string, since: Date): Promise<readonly OpenedPullRequest[]>;
   /** Issues (not pull requests) in the repository closed at or after `since`. */
