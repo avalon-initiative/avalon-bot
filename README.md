@@ -46,26 +46,44 @@ Layering is enforced by lint: `domain`, `config`, `render`, `services` and `util
 
 ## Setup
 
-Requires Node 22 or newer.
+See [`docs/setup.md`](docs/setup.md) for the full walkthrough: the Discord application, the GitHub App and its permissions, the `.env` and `config.yml` fields, registering the command, and troubleshooting.
 
-1. **Discord application.** Create an application in the Discord Developer Portal, add a bot, and invite it to the server with the `bot` and `applications.commands` scopes and these permissions: View Channels, Send Messages, Send Messages in Threads, Read Message History, Add Reactions. Administrator is not needed, and the privileged Message Content intent is not used.
-2. **GitHub App.** Create a GitHub App owned by the organization with **Issues: Read and write** (metadata read is implicit) and no webhook. Install it on the repositories the bot may file into, generate a private key, and save the `.pem` file.
-3. **Configuration.**
+## Deployment
 
-   ```bash
-   cp .env.example .env
-   cp config.example.yml config.yml
-   ```
+`deploy/avalon-bot.service` runs the bot under systemd as a dedicated non-root user, restarts it on failure and starts it on boot. The unit assumes the install path `/opt/avalon-bot`; edit `WorkingDirectory`, `EnvironmentFile` and `ExecStart` if the path or Node location differs.
 
-   Fill in `.env` (tokens and the App ID, key path) and `config.yml` (guild ID, allowed role IDs, repositories, optional per-channel defaults). Both files are gitignored, as are `*.pem` keys.
+Install:
 
-4. **Register the commands and run.**
+```bash
+sudo useradd --system --home /opt/avalon-bot --shell /usr/sbin/nologin avalon-bot
+sudo git clone https://github.com/avalon-initiative/avalon-bot /opt/avalon-bot
+cd /opt/avalon-bot
+# create .env, config.yml and the GitHub App .pem (see docs/setup.md), then:
+sudo chown -R avalon-bot:avalon-bot /opt/avalon-bot
+sudo chmod 600 .env *.pem
+sudo -u avalon-bot npm ci && sudo -u avalon-bot make build
+sudo -u avalon-bot make register-commands
+sudo cp deploy/avalon-bot.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now avalon-bot
+```
 
-   ```bash
-   npm ci
-   make register-commands   # once, and whenever a command definition changes
-   make start               # background; or `make run` in the foreground
-   ```
+Update:
+
+```bash
+cd /opt/avalon-bot
+sudo -u avalon-bot git pull
+sudo -u avalon-bot npm ci && sudo -u avalon-bot make build
+sudo systemctl restart avalon-bot
+```
+
+Logs are JSON lines in the journal:
+
+```bash
+journalctl -u avalon-bot -f
+systemctl status avalon-bot
+```
+
+The unit mounts the filesystem read-only for the service, so the bot writes nothing to disk; it needs only to read `.env`, `config.yml` and the key.
 
 ## Development
 
