@@ -41,7 +41,15 @@ export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       { key: 'hub', name: 'Avalon Hub', repo: 'avalon-initiative/avalon-hub' },
     ],
     channelDefaults: {},
-    labels: { bug: 'type: bug', feature: 'type: feature', task: 'type: chore', decision: 'decision' },
+    labels: {
+      bug: 'type: bug',
+      feature: 'type: feature',
+      task: 'type: chore',
+      decision: 'decision',
+      adr: 'architecture-decision-record',
+    },
+    maintainerRoleIds: [],
+    commentOnLinkedIssue: true,
     rateLimit: { maxRequests: 5, windowSeconds: 600 },
     ...overrides,
   };

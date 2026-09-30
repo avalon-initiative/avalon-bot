@@ -14,8 +14,15 @@ const labelsSchema = z
     feature: z.string().min(1).default('type: feature'),
     task: z.string().min(1).default('type: chore'),
     decision: z.string().min(1).default('decision'),
+    adr: z.string().min(1).default('architecture-decision-record'),
   })
-  .default({ bug: 'type: bug', feature: 'type: feature', task: 'type: chore', decision: 'decision' });
+  .default({
+    bug: 'type: bug',
+    feature: 'type: feature',
+    task: 'type: chore',
+    decision: 'decision',
+    adr: 'architecture-decision-record',
+  });
 
 export const configSchema = z
   .object({
@@ -24,6 +31,16 @@ export const configSchema = z
     repositories: z.array(repositorySchema).min(1).max(25),
     channelDefaults: z.record(snowflake, z.string()).default({}),
     labels: labelsSchema,
+    maintainerRoleIds: z.array(snowflake).default([]),
+    commentOnLinkedIssue: z.boolean().default(true),
+    notifications: z
+      .object({
+        pollIntervalMinutes: z.number().int().min(1).default(15),
+        /** Needs the GitHub App's Pull requests: Read permission. */
+        pullRequests: z.boolean().default(false),
+        mutedChannelIds: z.array(snowflake).default([]),
+      })
+      .optional(),
     rateLimit: z
       .object({
         maxRequests: z.number().int().positive().default(5),

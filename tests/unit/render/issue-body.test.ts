@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  parseDiscordOrigin,
+  renderLinkComment,
   MAX_QUOTED_LENGTH,
   MAX_TITLE_LENGTH,
   renderBody,
@@ -70,5 +72,34 @@ describe('renderBody', () => {
 
   it('handles messages with no text', () => {
     expect(renderBody(makeRequest({ source: makeSource({ content: '' }) }))).toContain('_(no text content)_');
+  });
+});
+
+describe('renderLinkComment', () => {
+  it('carries the source section and who linked it, without quoting the message', () => {
+    const body = renderLinkComment(makeSource({ threadName: 'reconnect' }), 'Bob');
+    expect(body).toContain('### Source');
+    expect(body).toContain('- Channel: `#sdk › reconnect`');
+    expect(body).toContain('- Discussion: https://discord.com/channels/1/2');
+    expect(body).toContain('### Linked By\n\nBob (Discord)');
+    expect(body).not.toContain("doesn't restore");
+  });
+
+  it('neutralizes mentions in the linker name', () => {
+    expect(renderLinkComment(makeSource(), '@everyone')).not.toContain('@everyone');
+  });
+});
+
+describe('parseDiscordOrigin', () => {
+  it('reads back the source message written by renderBody', () => {
+    const body = renderBody(
+      makeRequest({ source: makeSource({ messageUrl: 'https://discord.com/channels/10/20/30' }) }),
+    );
+    expect(parseDiscordOrigin(body)).toEqual({ guildId: '10', channelId: '20', messageId: '30' });
+  });
+
+  it('ignores bodies without a source message line', () => {
+    expect(parseDiscordOrigin('Discussed at https://discord.com/channels/10/20/30 today')).toBeUndefined();
+    expect(parseDiscordOrigin('')).toBeUndefined();
   });
 });

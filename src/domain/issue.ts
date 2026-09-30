@@ -24,3 +24,42 @@ export interface CreatedIssue {
   readonly url: string;
   readonly labelsApplied: boolean;
 }
+
+export interface ClosedIssue {
+  readonly repo: string;
+  readonly number: number;
+  readonly title: string;
+  readonly url: string;
+  readonly body: string;
+  readonly closedAt: Date;
+  /** GitHub's close reason, for example `completed` or `not_planned`. */
+  readonly stateReason: string | null;
+  /** True when a GitHub App or other bot account opened the issue. */
+  readonly authoredByBot: boolean;
+}
+
+export interface IssueDetails {
+  readonly repo: string;
+  readonly number: number;
+  readonly title: string;
+  readonly url: string;
+  readonly body: string;
+  readonly authoredByBot: boolean;
+  readonly labels: readonly string[];
+  readonly open: boolean;
+}
+
+export interface AdrPromotion {
+  readonly title: string;
+  readonly body: string;
+  readonly label: string;
+}
+
+export interface OpenedPullRequest {
+  readonly repo: string;
+  readonly number: number;
+  readonly title: string;
+  readonly url: string;
+  readonly body: string;
+  readonly createdAt: Date;
+}

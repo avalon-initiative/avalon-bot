@@ -7,7 +7,13 @@ import type { FileIssueService } from '../../services/file-issue-service.js';
 import type { Logger } from '../../util/logger.js';
 import { parseModalSubmission, pendingIdFrom, type ModalFields } from '../modal/file-issue-modal.js';
 import type { PendingStore } from '../pending.js';
+import { PROMOTE_BUTTON_LABEL, promoteCustomId } from '../promote-button.js';
 import { RESPONSES, issueCreatedMessage } from '../responses.js';
+
+export interface ActionButton {
+  readonly customId: string;
+  readonly label: string;
+}
 
 export interface ModalSubmitRequest {
   readonly customId: string;
@@ -17,7 +23,7 @@ export interface ModalSubmitRequest {
   deferEphemeral(): Promise<void>;
   editReply(content: string): Promise<void>;
   /** Posts publicly as a reply to the source message. */
-  replyToMessage(messageId: string, content: string): Promise<void>;
+  replyToMessage(messageId: string, content: string, button?: ActionButton): Promise<void>;
   markHandled(messageId: string): Promise<void>;
 }
 
@@ -26,6 +32,8 @@ export class ModalSubmitHandler {
     private readonly service: FileIssueService,
     private readonly pending: PendingStore,
     private readonly logger: Logger,
+    /** Adds a maintainer-only promote button to the confirmation of a decision. */
+    private readonly offerPromotion: boolean,
   ) {}
 
   async handle(request: ModalSubmitRequest): Promise<void> {
@@ -50,7 +58,14 @@ export class ModalSubmitHandler {
         filedBy: request.userName,
       });
       await this.markHandledQuietly(request, filing.source.id);
-      await request.replyToMessage(filing.source.id, issueCreatedMessage(issue));
+      const button =
+        this.offerPromotion && submission.kind === 'decision'
+          ? {
+              customId: promoteCustomId({ repoKey: submission.repoKey, number: issue.number }),
+              label: PROMOTE_BUTTON_LABEL,
+            }
+          : undefined;
+      await request.replyToMessage(filing.source.id, issueCreatedMessage(issue), button);
       await request.editReply(RESPONSES.done);
       this.logger.info('issue filed', { repo: issue.repo, number: issue.number, userId: request.userId });
     } catch (error) {

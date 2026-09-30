@@ -10,7 +10,19 @@ Right-click a message, choose **Apps → File GitHub Issue**, pick a type and re
 2. A modal collects type (bug, feature, task, decision), repository, title and details. The selected message is held in memory for the lifetime of the modal only.
 3. On submit the bot creates the issue through a GitHub App, adds a ✅ to the source message, and replies with `Ticket <title> (#N) filed`.
 
+If the issue already exists, choose **Apps → Link GitHub Issue** instead and enter an issue URL or `repo#number` (a configured repository key or `owner/name`). The bot verifies the issue, replies to the message with the link, adds the ✅, and comments on the issue with the Discord source unless `commentOnLinkedIssue` is `false`. Both commands share the role allowlist and the rate limit.
+
 Quoted Discord text is neutralized before it reaches GitHub: `@mentions` and `#123` references are broken and HTML is escaped, so filing an issue cannot ping users or cross-link other issues.
+
+## Notifications
+
+Optional and off by default. With a `notifications` block in `config.yml`, the bot checks each configured repository on a fixed interval (`pollIntervalMinutes`, default 15, minimum 1) and, when an issue it filed has been closed, replies to the original Discord message with a short note. Nothing is stored: the issue body already links to the source message, and the poll cursor and already-notified set live in memory, so closures that happen while the bot is down are not reported. The bot makes outbound requests to GitHub only; no inbound endpoint is needed. Channels or threads listed in `mutedChannelIds` never receive notes.
+
+Set `pullRequests: true` to also post a note when a pull request opened after startup references a bot-filed issue through `Closes #N`, `Fixes #N`, `Resolves owner/repo#N` or an issue URL. Each issue gets one note, and issues the bot did not file are ignored. This lists pull requests, so the GitHub App also needs the **Pull requests: Read** permission.
+
+## Promoting a decision to an ADR
+
+Set `maintainerRoleIds` in `config.yml` to enable it. When someone files a **Decision**, the bot's confirmation carries a **Promote to ADR** button. A member with a maintainer role can press it to rewrite the issue into the organization's ADR shape (Status, Context, Decision, Consequences, Related), add the `architecture-decision-record` label, and close it as completed. The button then disappears. Only open, bot-filed decisions can be promoted, and nothing is stored: the repository and issue number travel in the button itself. The Consequences section is left for a maintainer to fill in on GitHub. The existing Issues read/write permission is enough.
 
 ## Layout
 
@@ -34,26 +46,44 @@ Layering is enforced by lint: `domain`, `config`, `render`, `services` and `util
 
 ## Setup
 
-Requires Node 22 or newer.
+See [`docs/setup.md`](docs/setup.md) for the full walkthrough: the Discord application, the GitHub App and its permissions, the `.env` and `config.yml` fields, registering the command, and troubleshooting.
 
-1. **Discord application.** Create an application in the Discord Developer Portal, add a bot, and invite it to the server with the `bot` and `applications.commands` scopes and these permissions: View Channels, Send Messages, Send Messages in Threads, Read Message History, Add Reactions. Administrator is not needed, and the privileged Message Content intent is not used.
-2. **GitHub App.** Create a GitHub App owned by the organization with **Issues: Read and write** (metadata read is implicit) and no webhook. Install it on the repositories the bot may file into, generate a private key, and save the `.pem` file.
-3. **Configuration.**
+## Deployment
 
-   ```bash
-   cp .env.example .env
-   cp config.example.yml config.yml
-   ```
+`deploy/avalon-bot.service` runs the bot under systemd as a dedicated non-root user, restarts it on failure and starts it on boot. The unit assumes the install path `/opt/avalon-bot`; edit `WorkingDirectory`, `EnvironmentFile` and `ExecStart` if the path or Node location differs.
 
-   Fill in `.env` (tokens and the App ID, key path) and `config.yml` (guild ID, allowed role IDs, repositories, optional per-channel defaults). Both files are gitignored, as are `*.pem` keys.
+Install:
 
-4. **Register the command and run.**
+```bash
+sudo useradd --system --home /opt/avalon-bot --shell /usr/sbin/nologin avalon-bot
+sudo git clone https://github.com/avalon-initiative/avalon-bot /opt/avalon-bot
+cd /opt/avalon-bot
+# create .env, config.yml and the GitHub App .pem (see docs/setup.md), then:
+sudo chown -R avalon-bot:avalon-bot /opt/avalon-bot
+sudo chmod 600 .env *.pem
+sudo -u avalon-bot npm ci && sudo -u avalon-bot make build
+sudo -u avalon-bot make register-commands
+sudo cp deploy/avalon-bot.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now avalon-bot
+```
 
-   ```bash
-   npm ci
-   make register-commands   # once, and whenever the command definition changes
-   make start               # background; or `make run` in the foreground
-   ```
+Update:
+
+```bash
+cd /opt/avalon-bot
+sudo -u avalon-bot git pull
+sudo -u avalon-bot npm ci && sudo -u avalon-bot make build
+sudo systemctl restart avalon-bot
+```
+
+Logs are JSON lines in the journal:
+
+```bash
+journalctl -u avalon-bot -f
+systemctl status avalon-bot
+```
+
+The unit mounts the filesystem read-only for the service, so the bot writes nothing to disk; it needs only to read `.env`, `config.yml` and the key.
 
 ## Development
 
