@@ -76,13 +76,25 @@ describe('renderBody', () => {
 });
 
 describe('renderLinkComment', () => {
-  it('carries the source section and who linked it, without quoting the message', () => {
+  it('quotes the message, carries the source section and who linked it', () => {
     const body = renderLinkComment(makeSource({ threadName: 'reconnect' }), 'Bob');
     expect(body).toContain('### Source');
     expect(body).toContain('- Channel: `#sdk › reconnect`');
     expect(body).toContain('- Discussion: https://discord.com/channels/1/2');
     expect(body).toContain('### Linked By\n\nBob (Discord)');
-    expect(body).not.toContain("doesn't restore");
+    expect(body).toContain("> **Alice:** The SDK reconnects, but it doesn't restore guild state.");
+  });
+
+  it('lists attachments and neutralizes mentions in the quote', () => {
+    const body = renderLinkComment(
+      makeSource({
+        content: 'ping @everyone',
+        attachments: [{ name: 'log.txt', url: 'https://cdn.example/log.txt' }],
+      }),
+      'Bob',
+    );
+    expect(body).toContain('### Attachments\n\n- [log.txt](https://cdn.example/log.txt)');
+    expect(body).not.toContain('@everyone');
   });
 
   it('neutralizes mentions in the linker name', () => {

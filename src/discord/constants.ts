@@ -11,7 +11,7 @@ export const FIELD = {
   notes: 'notes',
 } as const;
 
-export const LINK_FIELD = { issue: 'issue' } as const;
+export const LINK_FIELD = { repo: 'repo', number: 'number' } as const;
 
 /** How long a submitted-to-modal message stays claimable; matches Discord's interaction token lifetime. */
 export const PENDING_TTL_MS = 15 * 60 * 1000;

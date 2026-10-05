@@ -32,6 +32,7 @@ describe('LinkIssueService', () => {
     expect(getIssue).toHaveBeenCalledWith('avalon-initiative/avalon-sdks', 12);
     expect(addComment).toHaveBeenCalledOnce();
     const body = addComment.mock.calls[0]?.[2] as string;
+    expect(body).toContain('> **Alice:** The SDK reconnects');
     expect(body).toContain('- Source message: https://discord.com/channels/1/2/3');
     expect(body).toContain('Bob (Discord)');
     expect(linked).toEqual({ issue: ISSUE, commented: true });
