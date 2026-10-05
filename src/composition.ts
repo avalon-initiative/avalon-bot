@@ -28,7 +28,7 @@ export function buildHandlers(config: AppConfig, tracker: IssueTracker, logger: 
   return {
     contextMenu: new ContextMenuHandler(config, pending, limiter, logger, fileIssueModalFactory(config)),
     modalSubmit: new ModalSubmitHandler(service, pending, logger, config.maintainerRoleIds.length > 0),
-    linkContextMenu: new ContextMenuHandler(config, pending, limiter, logger, linkIssueModalFactory()),
+    linkContextMenu: new ContextMenuHandler(config, pending, limiter, logger, linkIssueModalFactory(config)),
     linkModalSubmit: new LinkModalSubmitHandler(linkService, pending, logger),
     promoteAdr: new PromoteAdrHandler(config, new PromoteDecisionService(config, tracker), logger),
   };

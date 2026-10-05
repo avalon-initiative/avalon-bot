@@ -119,7 +119,7 @@ describe('ContextMenuHandler', () => {
       pending,
       new RateLimiter(5, 60_000),
       silentLogger,
-      linkIssueModalFactory(),
+      linkIssueModalFactory(makeConfig()),
     );
     const denied = makeRequest({ memberRoleIds: [] });
     await handler.handle(denied.request);

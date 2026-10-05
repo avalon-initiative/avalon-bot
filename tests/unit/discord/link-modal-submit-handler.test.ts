@@ -37,7 +37,7 @@ function setup(getIssue = vi.fn().mockResolvedValue(ISSUE)) {
     customId: 'link-issue:p1',
     userId: 'u1',
     userName: 'Bob',
-    fields: { getTextInputValue: () => 'sdks#12' },
+    fields: { getTextInputValue: () => '12', getStringSelectValues: () => ['sdks'] },
     ...calls,
     ...overrides,
   });
@@ -66,7 +66,9 @@ describe('LinkModalSubmitHandler', () => {
 
   it('tells the user when the reference is not understood', async () => {
     const { handler, calls, request } = setup();
-    await handler.handle(request({ fields: { getTextInputValue: () => 'nonsense' } }));
+    await handler.handle(
+      request({ fields: { getTextInputValue: () => 'nonsense', getStringSelectValues: () => ['sdks'] } }),
+    );
     expect(calls.editReply).toHaveBeenCalledWith(RESPONSES.invalidReference);
     expect(calls.replyToMessage).not.toHaveBeenCalled();
     expect(calls.markHandled).not.toHaveBeenCalled();
