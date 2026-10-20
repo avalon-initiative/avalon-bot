@@ -16,18 +16,18 @@
     "@octokit/app": "^16.1.4",
     "discord.js": "^14.27.0",
     "yaml": "^2.9.1",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.6.3",
-    "eslint": "^10.11.0",
-    "globals": "^17.12.0",
-    "prettier": "^3.9.9",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.71.0",
-    "vitest": "^5.0.2"
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.4"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
